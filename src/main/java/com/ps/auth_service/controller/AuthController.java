@@ -5,6 +5,8 @@ import com.ps.auth_service.Bo.Device;
 import com.ps.auth_service.entities.User;
 import com.ps.auth_service.service.AuthService;
 import com.ps.auth_service.service.JwtService;
+import com.ps.auth_service.util.AuthRequest;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
@@ -32,67 +34,11 @@ public class AuthController {
     @Autowired
     JwtService jwtService;
 
-    private final List<Device> devices = new ArrayList<>();
-
-    public AuthController() {
-        // Initializing some mock devices
-        devices.add(new Device("D001", "Smartphone A1", "Smartphone", "TechCorp", true));
-        devices.add(new Device("D002", "Router X200", "Router", "NetGear", false));
-        devices.add(new Device("D003", "Laptop Pro", "Laptop", "ComputeCo", true));
-        devices.add(new Device("D004", "Tablet Z", "Tablet", "TabTech", false));
-        devices.add(new Device("D005", "Smartwatch G3", "Wearable", "TimeTech", true));
-    }
-
-    // Endpoint to get the resource list and store it in the session
-    @GetMapping("/getResource")
-    public List<Device> getResource(HttpServletRequest request) {
-        log.info("Received request to get resources: {}", request);
-        HttpSession session = request.getSession(true);
-        session.setAttribute("devices", devices);
-        log.info("Session created with ID: {}", session.getId());
-        return devices;
-    }
-
-    // Endpoint to retrieve devices from the session
-    @GetMapping("/getSessionDevices")
-    public Object getSessionDevices(HttpSession session) {
-        Object sessionDevices = session.getAttribute("devices");
-        if (sessionDevices != null) {
-            log.info("Devices retrieved from session: {}", sessionDevices);
-            return sessionDevices;
-        } else {
-            log.warn("No devices found in session.");
-            return "No devices found in session.";
-        }
-    }
-
-    // Endpoint to clear the session
-    @GetMapping("/clearSession")
-    public String clearSession(HttpSession session) {
-        session.invalidate(); // Invalidate the session
-        log.info("Session cleared successfully.");
-        return "Session cleared successfully.";
-    }
-
-    // Endpoint to dynamically add a device and store it in the session
-    @GetMapping("/addDevice")
-    public List<Device> addDevice(
-            @RequestParam String id,
-            @RequestParam String name,
-            @RequestParam String type,
-            @RequestParam String manufacturer,
-            @RequestParam boolean isOnline,
-            HttpSession session) {
-        Device newDevice = new Device(id, name, type, manufacturer, isOnline);
-        devices.add(newDevice);
-        session.setAttribute("devices", devices);
-        log.info("New device added: {}", newDevice);
-        return devices;
-    }
-
+    
     // Endpoint for registering a user
     @PostMapping("/register")
-    public ResponseEntity<Object> registerUser(@RequestBody User user) {
+    public ResponseEntity<Object> registerUser(@RequestBody AuthRequest authRequest) {
+        User user=new User(authRequest.getUsername(),authRequest.getPassword(),authRequest.getRole().orElse("USER"));
         log.info("Received request to register user: {}", user);
         try {
             log.info("Registering user: {}", user);
@@ -107,7 +53,8 @@ public class AuthController {
 
     // Endpoint for user login
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestBody User user) {
+    public ResponseEntity<String> loginUser(@RequestBody AuthRequest authRequest) {
+        User user=new User(authRequest.getUsername(),authRequest.getPassword());
         log.info("Received login request for user: {}", user);
         try {
             boolean isAuthenticated = authService.verifyUser(user);
