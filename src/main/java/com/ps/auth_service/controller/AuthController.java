@@ -1,7 +1,6 @@
 package com.ps.auth_service.controller;
 
 import org.springframework.web.bind.annotation.RestController;
-import com.ps.auth_service.Bo.Device;
 import com.ps.auth_service.entities.User;
 import com.ps.auth_service.service.AuthService;
 import com.ps.auth_service.service.JwtService;

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.ps.auth_service.service.JwtService;
-import com.ps.auth_service.service.Impl.CustomUserDetailsService;
+import com.ps.auth_service.service.UserService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,7 +28,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private JwtService jwtService;
 
     @Autowired
-    private CustomUserDetailsService customUserDetailsService;
+    private UserService userService;
 
     @SuppressWarnings("null")
     @Override
@@ -42,7 +42,7 @@ public class JwtFilter extends OncePerRequestFilter {
             String authHeader = request.getHeader("Authorization");
             String token = null;
             String username = null;
-            
+
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7).trim();
                 username = jwtService.extractUsername(token);
@@ -53,7 +53,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 log.info("No existing authentication found, attempting authentication for username: {}", username);
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+                UserDetails userDetails = userService.loadUserByUsername(username);
 
                 if (jwtService.validateToken(token, userDetails)) {
                     log.info("JWT token validated successfully for username: {}", username);

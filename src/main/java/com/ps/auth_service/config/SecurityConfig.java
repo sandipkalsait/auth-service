@@ -17,57 +17,53 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.ps.auth_service.filter.JwtFilter;
-import com.ps.auth_service.service.Impl.CustomUserDetailsService;
+import com.ps.auth_service.service.UserService;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     /**
-     * Configures the security filter chain, including CSRF, authorization rules, 
+     * Configures the security filter chain, including CSRF, authorization rules,
      * session management, and authentication type.
      */
     @Autowired
     JwtFilter jwtFilter;
+    @Autowired
+    UserService userService;
+
+    final private String[] WHITE_LABELS={"/v1/login", "/v1/register"};
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()) // Disable CSRF for stateless APIs
-            .authorizeHttpRequests(auth -> 
-                auth.requestMatchers("/v1/login","/v1/register").permitAll() // Public access to /v1/register
-                    .anyRequest().authenticated()) // All other requests require authentication
-            .httpBasic(Customizer.withDefaults()) // Use Basic Authentication
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Stateless sessions for APIs
-
+                .authorizeHttpRequests(auth -> 
+                auth.requestMatchers(WHITE_LABELS).permitAll() // Public access  /v1/register
+                        .anyRequest().authenticated()) // All other requests require authentication
+                .httpBasic(Customizer.withDefaults()) // Use Basic Authentication
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); 
+                // Stateless sessions for  APIs
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
-    /**
-     * Configures the AuthenticationProvider to use a custom UserDetailsService and password encoding.
-     */
+   
     @Bean
-    public AuthenticationProvider authenticationProvider(CustomUserDetailsService customUserDetailsService) {
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(customUserDetailsService); // Use custom user details service
+        provider.setUserDetailsService(userService); // Use custom user details service
         provider.setPasswordEncoder(passwordEncoder()); // Use BCrypt for password encoding
         return provider;
     }
 
-    /**
-     * Configures the password encoder for encrypting and validating user passwords.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(); // Strong password encoding
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception
-    {
-
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
-
     }
+
 }
